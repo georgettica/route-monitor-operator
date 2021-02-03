@@ -22,6 +22,7 @@ type RouteMonitorSupplement interface {
 type RouteMonitorDeleter interface {
 	EnsureServiceMonitorResourceAbsent(ctx context.Context, routeMonitor v1alpha1.RouteMonitor) error
 	EnsurePrometheusRuleResourceAbsent(ctx context.Context, routeMonitor v1alpha1.RouteMonitor) error
+	ShouldDeletePrometheusRule(routeMonitor v1alpha1.RouteMonitor) bool
 }
 
 type RouteMonitorAdder interface {

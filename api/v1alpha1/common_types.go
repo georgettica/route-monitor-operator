@@ -15,8 +15,12 @@ type SloSpec struct {
 }
 
 func (s SloSpec) IsValid() bool {
-	sampleDec := new(inf.Dec)
-	d, sucess := sampleDec.SetString(s.TargetAvailabilityPercentile)
+
+	if s.TargetAvailabilityPercentile == "" {
+		return false
+	}
+
+	d, sucess := new(inf.Dec).SetString(s.TargetAvailabilityPercentile)
 	// value is not parsable
 	if !sucess {
 		return false
@@ -25,16 +29,16 @@ func (s SloSpec) IsValid() bool {
 	// will be 0.9
 	ninty := inf.NewDec(9, 1)
 	// is higher than lower bound
-	nintyPercentDiff := sampleDec.Sub(d, ninty)
+	nintyPercentDiff := new(inf.Dec).Sub(d, ninty)
 	if nintyPercentDiff.Sign() <= 0 {
 		return false
 	}
 
 	// will be 1.0
 	hundred := inf.NewDec(1, 0)
-	// is lower than upper bound
-	hundredPercentDiff := sampleDec.Sub(d, hundred)
-	if hundredPercentDiff.Sign() < 0 {
+	// is higher than upper bound
+	hundredPercentDiff := new(inf.Dec).Sub(d, hundred)
+	if hundredPercentDiff.Sign() >= 0 {
 		return false
 	}
 

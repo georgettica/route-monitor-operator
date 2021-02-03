@@ -100,17 +100,28 @@ func (r *RouteMonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error
 		return utilreconcile.Stop()
 	}
 
-	log.V(2).Info("Entering EnsureServiceMonitorResourceExists")
-	res, err = r.EnsureServiceMonitorResourceExists(ctx, routeMonitor)
-	if err != nil {
-		return utilreconcile.RequeueWith(err)
-	}
-	if res.ShouldStop() {
-		return utilreconcile.Stop()
+	// Handle deletion of Optional PrometheusRule Resource
+	shouldDeletePrometheusRule := r.ShouldDeletePrometheusRule(routeMonitor)
+	log.V(2).Info("Response of ShouldDeletePrometheusRule", "result", shouldDeletePrometheusRule)
+
+	if shouldDeletePrometheusRule {
+		err := r.EnsurePrometheusRuleResourceAbsent(ctx, routeMonitor)
+		if err != nil {
+			return utilreconcile.RequeueWith(err)
+		}
+	} else {
+		log.V(2).Info("Entering EnsurePrometheusRuleResourceExists")
+		res, err = r.EnsurePrometheusRuleResourceExists(ctx, routeMonitor)
+		if err != nil {
+			return utilreconcile.RequeueWith(err)
+		}
+		if res.ShouldStop() {
+			return utilreconcile.Stop()
+		}
 	}
 
-	log.V(2).Info("Entering EnsurePrometheusRuleResourceExists")
-	res, err = r.EnsurePrometheusRuleResourceExists(ctx, routeMonitor)
+	log.V(2).Info("Entering EnsureServiceMonitorResourceExists")
+	res, err = r.EnsureServiceMonitorResourceExists(ctx, routeMonitor)
 	if err != nil {
 		return utilreconcile.RequeueWith(err)
 	}

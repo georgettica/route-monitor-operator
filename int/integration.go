@@ -63,8 +63,7 @@ func (i *Integration) Shutdown() {
 	close(i.clientChan)
 }
 
-func (i *Integration) RemoveClusterUrlMonitor(namespace, name string) error {
-	namespacedName := types.NamespacedName{Namespace: namespace, Name: name}
+func (i *Integration) RemoveClusterUrlMonitor(namespacedName types.NamespacedName) error {
 	clusterUrlMonitor := v1alpha1.ClusterUrlMonitor{}
 
 	err := i.Client.Get(context.TODO(), namespacedName, &clusterUrlMonitor)
@@ -93,8 +92,7 @@ func (i *Integration) RemoveClusterUrlMonitor(namespace, name string) error {
 	return err
 }
 
-func (i *Integration) RemoveRouteMonitor(namespace, name string) error {
-	namespacedName := types.NamespacedName{Namespace: namespace, Name: name}
+func (i *Integration) RemoveRouteMonitor(namespacedName types.NamespacedName) error {
 	routeMonitor := v1alpha1.RouteMonitor{}
 
 	err := i.Client.Get(context.TODO(), namespacedName, &routeMonitor)
@@ -153,4 +151,20 @@ func (i *Integration) WaitForPrometheusRule(name types.NamespacedName, seconds i
 		return prometheusRule, fmt.Errorf("PrometheusRule didn't appear after %d seconds", seconds)
 	}
 	return prometheusRule, nil
+}
+func (i *Integration) WaitForPrometheusRuleToDelete(name types.NamespacedName, seconds int) (bool, error) {
+	prometheusRule := monitoringv1.PrometheusRule{}
+	t := 0
+	var err error
+	for ; t < seconds; t++ {
+		err = i.Client.Get(context.TODO(), name, &prometheusRule)
+		if !errors.IsNotFound(err) {
+			time.Sleep(1 * time.Second)
+		}
+		break
+	}
+	if t == seconds {
+		return false, fmt.Errorf("PrometheusRule didn't appear after %d seconds, error is %w", seconds, err)
+	}
+	return true, nil
 }

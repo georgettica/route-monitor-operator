@@ -149,6 +149,20 @@ func (mr *MockRouteMonitorDeleterMockRecorder) EnsurePrometheusRuleResourceAbsen
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "EnsurePrometheusRuleResourceAbsent", reflect.TypeOf((*MockRouteMonitorDeleter)(nil).EnsurePrometheusRuleResourceAbsent), ctx, routeMonitor)
 }
 
+// ShouldDeletePrometheusRule mocks base method
+func (m *MockRouteMonitorDeleter) ShouldDeletePrometheusRule(routeMonitor v1alpha1.RouteMonitor) bool {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ShouldDeletePrometheusRule", routeMonitor)
+	ret0, _ := ret[0].(bool)
+	return ret0
+}
+
+// ShouldDeletePrometheusRule indicates an expected call of ShouldDeletePrometheusRule
+func (mr *MockRouteMonitorDeleterMockRecorder) ShouldDeletePrometheusRule(routeMonitor interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ShouldDeletePrometheusRule", reflect.TypeOf((*MockRouteMonitorDeleter)(nil).ShouldDeletePrometheusRule), routeMonitor)
+}
+
 // MockRouteMonitorAdder is a mock of RouteMonitorAdder interface
 type MockRouteMonitorAdder struct {
 	ctrl     *gomock.Controller

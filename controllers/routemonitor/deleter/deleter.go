@@ -53,6 +53,11 @@ func (r *RouteMonitorDeleter) EnsureServiceMonitorResourceAbsent(ctx context.Con
 	return nil
 }
 
+// ShouldDeletePrometheusRule verifies if there is a dangling PrometheusRuleRef which needs to be cleaned up
+func (r *RouteMonitorDeleter) ShouldDeletePrometheusRule(routeMonitor v1alpha1.RouteMonitor) bool {
+	return routeMonitor.Spec.Slo == *new(v1alpha1.SloSpec) && routeMonitor.Status.PrometheusRuleRef != *new(v1alpha1.NamespacedName)
+}
+
 func (r *RouteMonitorDeleter) EnsurePrometheusRuleResourceAbsent(ctx context.Context, routeMonitor v1alpha1.RouteMonitor) error {
 	namespacedName := types.NamespacedName{Name: routeMonitor.Status.PrometheusRuleRef.Name,
 		Namespace: routeMonitor.Status.PrometheusRuleRef.Namespace}

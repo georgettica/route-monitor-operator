@@ -428,12 +428,13 @@ var _ = Describe("Adder", func() {
 					TargetAvailabilityPercentile: "",
 				}
 			})
-			It("should Throw an error", func() {
+			It("should continue processing as nothing is to be done here", func() {
 				// Act
-				_, err := routeMonitorAdder.EnsurePrometheusRuleResourceExists(ctx, routeMonitor)
+				res, err := routeMonitorAdder.EnsurePrometheusRuleResourceExists(ctx, routeMonitor)
 				// Assert
-				Expect(err).To(HaveOccurred())
-				Expect(err).To(MatchError(customerrors.InvalidSLO))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(res).NotTo(BeNil())
+				Expect(res).To(Equal(utilreconcile.ContinueOperation()))
 			})
 		})
 		When("the RouteMonitor has invalid slo type", func() {

@@ -34,6 +34,10 @@ type ClusterUrlMonitorSpec struct {
 	Port   string `json:"port,omitempty"`
 }
 
+func (c ClusterUrlMonitorSpec) ConstructUrl(domain string) string {
+	return c.Prefix + domain + ":" + c.Port + c.Suffix
+}
+
 // ClusterUrlMonitorStatus defines the observed state of ClusterUrlMonitor
 type ClusterUrlMonitorStatus struct {
 	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster

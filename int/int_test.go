@@ -2,6 +2,7 @@ package int_test
 
 import (
 	"context"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -29,22 +30,25 @@ var _ = Describe("Integrationtests", func() {
 
 	Context("ClusterUrlMonitor creation", func() {
 		var (
-			clusterUrlMonitorName      string
-			clusterUrlMonitorNamespace string
+			resourceIdentity           types.NamespacedName
 			clusterUrlMonitor          v1alpha1.ClusterUrlMonitor
 			expectedServiceMonitorName types.NamespacedName
 		)
 		BeforeEach(func() {
-			clusterUrlMonitorName = "fake-url-monitor"
-			clusterUrlMonitorNamespace = "default"
+			resourceIdentity = types.NamespacedName{
+				Name:      "fake-url-monitor",
+				Namespace: "default",
+			}
 
-			err := i.RemoveClusterUrlMonitor(clusterUrlMonitorNamespace, clusterUrlMonitorName)
+			// clean possible leftovers
+			err := i.RemoveClusterUrlMonitor(resourceIdentity)
 			Expect(err).NotTo(HaveOccurred())
-			expectedServiceMonitorName = types.NamespacedName{Name: clusterUrlMonitorName, Namespace: clusterUrlMonitorNamespace}
+
+			expectedServiceMonitorName = resourceIdentity
 			clusterUrlMonitor = v1alpha1.ClusterUrlMonitor{
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace: clusterUrlMonitorNamespace,
-					Name:      clusterUrlMonitorName,
+					Namespace: resourceIdentity.Namespace,
+					Name:      resourceIdentity.Name,
 				},
 				Spec: v1alpha1.ClusterUrlMonitorSpec{
 					Prefix: "fake-prefix.",
@@ -54,7 +58,7 @@ var _ = Describe("Integrationtests", func() {
 			}
 		})
 		AfterEach(func() {
-			err := i.RemoveClusterUrlMonitor(clusterUrlMonitorNamespace, clusterUrlMonitorName)
+			err := i.RemoveClusterUrlMonitor(resourceIdentity)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -73,13 +77,13 @@ var _ = Describe("Integrationtests", func() {
 				err = i.Client.Get(context.TODO(), types.NamespacedName{Name: "cluster"}, &clusterConfig)
 				Expect(err).NotTo(HaveOccurred())
 				spec := clusterUrlMonitor.Spec
-				expectedUrl := spec.Prefix + clusterConfig.Spec.Domain + ":" + spec.Port + spec.Suffix
-				Expect(len(serviceMonitor.Spec.Endpoints)).To(Equal(1))
-				Expect(len(serviceMonitor.Spec.Endpoints[0].Params["target"])).To(Equal(1))
+				expectedUrl := spec.ConstructUrl(clusterConfig.Spec.Domain)
+				Expect(serviceMonitor.Spec.Endpoints).To(HaveLen(1))
+				Expect(serviceMonitor.Spec.Endpoints[0].Params["target"]).To(HaveLen(1))
 				Expect(serviceMonitor.Spec.Endpoints[0].Params["target"][0]).To(Equal(expectedUrl))
 
 				updatedClusterUrlMonitor := v1alpha1.ClusterUrlMonitor{}
-				err = i.Client.Get(context.TODO(), types.NamespacedName{Namespace: clusterUrlMonitorNamespace, Name: clusterUrlMonitorName}, &updatedClusterUrlMonitor)
+				err = i.Client.Get(context.TODO(), resourceIdentity, &updatedClusterUrlMonitor)
 				Expect(err).NotTo(HaveOccurred())
 				Expect(updatedClusterUrlMonitor.Status.ServiceMonitorRef.Name).To(Equal(serviceMonitor.Name))
 				Expect(updatedClusterUrlMonitor.Status.ServiceMonitorRef.Namespace).To(Equal(serviceMonitor.Namespace))
@@ -94,7 +98,7 @@ var _ = Describe("Integrationtests", func() {
 				_, err = i.WaitForServiceMonitor(expectedServiceMonitorName, 20)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = i.RemoveClusterUrlMonitor(clusterUrlMonitorNamespace, clusterUrlMonitorName)
+				err = i.RemoveClusterUrlMonitor(resourceIdentity)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
@@ -109,25 +113,28 @@ var _ = Describe("Integrationtests", func() {
 
 	Context("RouteMonitor creation", func() {
 		var (
-			routeMonitorName          string
-			routeMonitorNamespace     string
+			resourceIdentity          types.NamespacedName
+			percentile                string
 			routeMonitor              v1alpha1.RouteMonitor
 			expectedDependentResource types.NamespacedName
 		)
 		BeforeEach(func() {
-			routeMonitorName = "fake-route-monitor"
-			routeMonitorNamespace = "default"
-			err := i.RemoveRouteMonitor(routeMonitorNamespace, routeMonitorName)
-			expectedDependentResource = types.NamespacedName{Name: routeMonitorName, Namespace: routeMonitorNamespace}
+			resourceIdentity = types.NamespacedName{
+				Name:      "fake-route-monitor",
+				Namespace: "default",
+			}
+			percentile = "0.9995"
+			err := i.RemoveRouteMonitor(resourceIdentity)
+			expectedDependentResource = types.NamespacedName{Name: resourceIdentity.Name, Namespace: resourceIdentity.Namespace}
 			Expect(err).NotTo(HaveOccurred())
 			routeMonitor = v1alpha1.RouteMonitor{
 				ObjectMeta: metav1.ObjectMeta{
-					Namespace: routeMonitorNamespace,
-					Name:      routeMonitorName,
+					Namespace: resourceIdentity.Namespace,
+					Name:      resourceIdentity.Name,
 				},
 				Spec: v1alpha1.RouteMonitorSpec{
 					Slo: v1alpha1.SloSpec{
-						TargetAvailabilityPercentile: "0.9995",
+						TargetAvailabilityPercentile: percentile,
 					},
 					Route: v1alpha1.RouteMonitorRouteSpec{
 						Name:      "console",
@@ -137,7 +144,7 @@ var _ = Describe("Integrationtests", func() {
 			}
 		})
 		AfterEach(func() {
-			err := i.RemoveRouteMonitor(routeMonitorNamespace, routeMonitorName)
+			err := i.RemoveRouteMonitor(resourceIdentity)
 			Expect(err).NotTo(HaveOccurred())
 		})
 
@@ -157,7 +164,7 @@ var _ = Describe("Integrationtests", func() {
 				Expect(prometheusRule.Namespace).To(Equal(expectedDependentResource.Namespace))
 
 				updatedRouteMonitor := v1alpha1.RouteMonitor{}
-				err = i.Client.Get(context.TODO(), types.NamespacedName{Namespace: routeMonitorNamespace, Name: routeMonitorName}, &updatedRouteMonitor)
+				err = i.Client.Get(context.TODO(), resourceIdentity, &updatedRouteMonitor)
 				Expect(err).NotTo(HaveOccurred())
 
 				Expect(updatedRouteMonitor.Status.PrometheusRuleRef.Name).To(Equal(prometheusRule.Name))
@@ -168,6 +175,76 @@ var _ = Describe("Integrationtests", func() {
 			})
 		})
 
+		When("slo is modified in-flight", func() {
+			It("modifies the status resource ", func() {
+				err := i.Client.Create(context.TODO(), &routeMonitor)
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = i.WaitForServiceMonitor(expectedDependentResource, 20)
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = i.WaitForPrometheusRule(expectedDependentResource, 20)
+				Expect(err).NotTo(HaveOccurred())
+
+				updatedRouteMonitor := v1alpha1.RouteMonitor{}
+				err = i.Client.Get(context.TODO(), resourceIdentity, &updatedRouteMonitor)
+				Expect(err).NotTo(HaveOccurred())
+
+				inflightRouteMonitor := updatedRouteMonitor.DeepCopy()
+				veryVeryAvailablePercentile := "0.9999995"
+				inflightRouteMonitor.Spec.Slo.TargetAvailabilityPercentile = veryVeryAvailablePercentile
+				err = i.Client.Update(context.TODO(), inflightRouteMonitor)
+				Expect(err).NotTo(HaveOccurred())
+
+				time.Sleep(10 * time.Second)
+
+				newestRouteMonitor := v1alpha1.RouteMonitor{}
+				err = i.Client.Get(context.TODO(), resourceIdentity, &newestRouteMonitor)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(newestRouteMonitor.Status.CurrentTargetAvailabilityPercentile).To(Equal(veryVeryAvailablePercentile))
+			})
+		})
+
+		When("slo is created/deleted in-flight", func() {
+			It("deletes the prometheusRule ", func() {
+				// clean SLO before creating
+				routeMonitor.Spec.Slo = v1alpha1.SloSpec{}
+
+				err := i.Client.Create(context.TODO(), &routeMonitor)
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = i.WaitForServiceMonitor(expectedDependentResource, 20)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Add slo
+				err = i.Client.Get(context.TODO(), resourceIdentity, &routeMonitor)
+				Expect(err).NotTo(HaveOccurred())
+				routeMonitor.Spec.Slo.TargetAvailabilityPercentile = percentile
+				err = i.Client.Update(context.TODO(), &routeMonitor)
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = i.WaitForPrometheusRule(expectedDependentResource, 20)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Remove slo
+				err = i.Client.Get(context.TODO(), resourceIdentity, &routeMonitor)
+				Expect(err).NotTo(HaveOccurred())
+				routeMonitor.Spec.Slo = v1alpha1.SloSpec{}
+				err = i.Client.Update(context.TODO(), &routeMonitor)
+				Expect(err).NotTo(HaveOccurred())
+
+				_, err = i.WaitForPrometheusRuleToDelete(expectedDependentResource, 20)
+				Expect(err).NotTo(HaveOccurred())
+
+				err = i.Client.Get(context.TODO(), resourceIdentity, &routeMonitor)
+				Expect(err).NotTo(HaveOccurred())
+
+				Expect(routeMonitor.Status.PrometheusRuleRef).To(Equal(*new(v1alpha1.NamespacedName)))
+				Expect(routeMonitor.Status.CurrentTargetAvailabilityPercentile).To(Equal(""))
+
+			})
+		})
 		When("the RouteMonitor is deleted", func() {
 			BeforeEach(func() {
 				err := i.Client.Create(context.TODO(), &routeMonitor)
@@ -179,7 +256,7 @@ var _ = Describe("Integrationtests", func() {
 				_, err = i.WaitForPrometheusRule(expectedDependentResource, 20)
 				Expect(err).NotTo(HaveOccurred())
 
-				err = i.RemoveRouteMonitor(routeMonitorNamespace, routeMonitorName)
+				err = i.RemoveRouteMonitor(resourceIdentity)
 				Expect(err).NotTo(HaveOccurred())
 			})
 

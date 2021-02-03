@@ -4,6 +4,7 @@ import (
 	"github.com/go-logr/logr"
 
 	"context"
+	"errors"
 
 	// k8s packages
 	k8serrors "k8s.io/apimachinery/pkg/api/errors"
@@ -108,13 +109,13 @@ func (r *RouteMonitorAdder) EnsurePrometheusRuleResourceExists(ctx context.Conte
 		return utilreconcile.RequeueReconcileWith(customerrors.NoHost)
 	}
 
-	// Is the SloSpec configured on this CR?
-	emptySlo := v1alpha1.SloSpec{}
-	if routeMonitor.Spec.Slo == emptySlo {
+	sloEmpty := routeMonitor.Spec.Slo == *new(v1alpha1.SloSpec)
+	prometheusRuleRefEmpty := routeMonitor.Status.PrometheusRuleRef == *new(v1alpha1.NamespacedName)
+	if sloEmpty && prometheusRuleRefEmpty {
 		return utilreconcile.ContinueReconcile()
 	}
 
-	if !routeMonitor.Spec.Slo.IsValid() {
+	if !sloEmpty && !routeMonitor.Spec.Slo.IsValid() {
 		return utilreconcile.RequeueReconcileWith(customerrors.InvalidSLO)
 	}
 
@@ -127,30 +128,52 @@ func (r *RouteMonitorAdder) EnsurePrometheusRuleResourceExists(ctx context.Conte
 		return utilreconcile.StopReconcile()
 	}
 
-	namespacedName := types.NamespacedName{Name: routeMonitor.Name, Namespace: routeMonitor.Namespace}
-	if !routeMonitor.Spec.Slo.IsValid() {
-		return utilreconcile.RequeueReconcileWith(customerrors.InvalidSLO)
-	}
-
-	normalizedPercent := routeMonitor.Spec.Slo.TargetAvailabilityPercentile
+	percentile := routeMonitor.Spec.Slo.TargetAvailabilityPercentile
+	namespacedName := types.NamespacedName{Namespace: routeMonitor.Namespace, Name: routeMonitor.Name}
 	resource := &monitoringv1.PrometheusRule{}
 	populationFunc := func() monitoringv1.PrometheusRule {
-		return templates.TemplateForPrometheusRuleResource(routeMonitor.Status.RouteURL, normalizedPercent, namespacedName)
+		return templates.TemplateForPrometheusRuleResource(routeMonitor.Status.RouteURL, percentile, namespacedName)
 	}
 
-	// Does the resource already exist?
-	if err := r.Get(ctx, namespacedName, resource); err != nil {
-		// If this is an unknown error
-		if !k8serrors.IsNotFound(err) {
-			// return unexpectedly
-			return utilreconcile.RequeueReconcileWith(err)
+	// if the percentile changes in flight
+	samePercentile := percentile == routeMonitor.Status.CurrentTargetAvailabilityPercentile
+	if !sloEmpty && !prometheusRuleRefEmpty && !samePercentile {
+		// Does the resource already exist?
+		if err := r.Get(ctx, namespacedName, resource); err != nil {
+			// If this is an unknown error
+			if !k8serrors.IsNotFound(err) {
+				// return unexpectedly
+				return utilreconcile.RequeueReconcileWith(err)
+			}
+		}
+		if resource == new(monitoringv1.PrometheusRule) {
+			return utilreconcile.RequeueReconcileWith(errors.New("cannot get resource"))
 		}
 		// populate the resource with the template
 		resource := populationFunc()
-		// and create it
-		err = r.Create(ctx, &resource)
+		// and update it
+		err := r.Update(ctx, &resource)
 		if err != nil {
 			return utilreconcile.RequeueReconcileWith(err)
+		}
+
+	} else {
+		// or is this a normal change
+
+		// Does the resource already exist?
+		if err := r.Get(ctx, namespacedName, resource); err != nil {
+			// If this is an unknown error
+			if !k8serrors.IsNotFound(err) {
+				// return unexpectedly
+				return utilreconcile.RequeueReconcileWith(err)
+			}
+			// populate the resource with the template
+			resource := populationFunc()
+			// and create it
+			err = r.Create(ctx, &resource)
+			if err != nil {
+				return utilreconcile.RequeueReconcileWith(err)
+			}
 		}
 	}
 
@@ -158,10 +181,11 @@ func (r *RouteMonitorAdder) EnsurePrometheusRuleResourceExists(ctx context.Conte
 		Name:      namespacedName.Name,
 		Namespace: namespacedName.Namespace,
 	}
-
-	if routeMonitor.Status.PrometheusRuleRef != desiredPrometheusRuleRef {
+	samePrometheusRuleRef := routeMonitor.Status.PrometheusRuleRef == desiredPrometheusRuleRef
+	if !samePrometheusRuleRef || !samePercentile {
 		// Update status with PrometheusRuleRef
 		routeMonitor.Status.PrometheusRuleRef = desiredPrometheusRuleRef
+		routeMonitor.Status.CurrentTargetAvailabilityPercentile = percentile
 		err := r.Status().Update(ctx, &routeMonitor)
 		if err != nil {
 			return utilreconcile.RequeueReconcileWith(err)
