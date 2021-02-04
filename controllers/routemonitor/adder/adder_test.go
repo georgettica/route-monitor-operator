@@ -527,6 +527,7 @@ var _ = Describe("Adder", func() {
 					Name:      routeMonitor.Name,
 					Namespace: routeMonitor.Namespace,
 				}
+				routeMonitor.Status.CurrentTargetAvailabilityPercentile = "0.9995"
 			})
 
 			It("should continue reconciling", func() {
