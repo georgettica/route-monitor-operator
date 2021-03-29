@@ -78,3 +78,45 @@ make test-integration
 
 * [ ] add option to specify which probes to use
 * [ ] make service monitor use a different interval via modifying a line in the spec of route monitor
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# RMO Dip Dive
+
+Notes:
+1. go through ginkgo, gomega and gomock (just to say what they do)
+2. show one test file and explain what we see (RouteMonitorTests)
+3. what is the adder/deleter/supplement
+4. how does adder/deleter fit into the base routemonitor tests
+5. how do we initalize the codes
+6. how does code coverage go into place
+7. have you thought of edge cases (100% test coverage)
+8. initalization values as a struct (gomock expect stuffz)
+9. creation of client.go (the way we fill mockgen)
+10. when we deploy this, what do I do? (PR validation, testing locally)
