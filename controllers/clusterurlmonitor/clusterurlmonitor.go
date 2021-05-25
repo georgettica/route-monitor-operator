@@ -43,7 +43,9 @@ type ClusterUrlMonitorReconciler struct {
 }
 
 const (
-	FinalizerKey string = "clusterurlmonitor.monitoring.openshift.io/clusterurlmonitorcontroller"
+	FinalizerKey string = "clusterurlmonitor.routemonitoroperator.monitoring.openshift.io/finalizer"
+	// PrevFinalizerKey is here until migration to new key is done
+	PrevFinalizerKey string = "clusterurlmonitor.monitoring.openshift.io/clusterurlmonitorcontroller"
 )
 
 // +kubebuilder:rbac:groups=monitoring.openshift.io,resources=clusterurlmonitors,verbs=get;list;watch;create;update;patch;delete

@@ -56,6 +56,15 @@ func NewSupplement(ClusterUrlMonitor v1alpha1.ClusterUrlMonitor, Client client.C
 }
 
 func (s *ClusterUrlMonitorSupplement) EnsureFinalizer() (reconcile.Result, error) {
+	// In case we are in a migration stage (have the PrevFinalizerKey and not the new one)
+	// remove this if block once there are no clusters with PrevFinalizerKey
+	if utilfinalizer.Contains(s.ClusterUrlMonitor.GetFinalizers(), PrevFinalizerKey) {
+		utilfinalizer.Add(&s.ClusterUrlMonitor, FinalizerKey)
+		utilfinalizer.Remove(&s.ClusterUrlMonitor, PrevFinalizerKey)
+		err := s.Client.Update(s.Ctx, &s.ClusterUrlMonitor)
+		return reconcile.RequeueReconcileWith(err)
+	}
+
 	if !utilfinalizer.Contains(s.ClusterUrlMonitor.GetFinalizers(), FinalizerKey) {
 		utilfinalizer.Add(&s.ClusterUrlMonitor, FinalizerKey)
 		err := s.Client.Update(s.Ctx, &s.ClusterUrlMonitor)

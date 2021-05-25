@@ -120,6 +120,14 @@ func (r *RouteMonitorSupplement) EnsureRouteURLExists(ctx context.Context, route
 }
 
 func (r *RouteMonitorSupplement) EnsureFinalizerAbsent(ctx context.Context, routeMonitor v1alpha1.RouteMonitor) (utilreconcile.Result, error) {
+	// In case we are in a migration stage (have the PrevFinalizerKey and not the new one)
+	// remove this if block once there are no clusters with PrevFinalizerKey
+	if finalizer.HasFinalizer(&routeMonitor, consts.PrevFinalizerKey) {
+		utilfinalizer.Add(&routeMonitor, consts.FinalizerKey)
+		utilfinalizer.Remove(&routeMonitor, consts.PrevFinalizerKey)
+		err := r.Client.Update(ctx, &routeMonitor)
+		return utilreconcile.RequeueReconcileWith(err)
+	}
 	if finalizer.HasFinalizer(&routeMonitor, consts.FinalizerKey) {
 		// if finalizer is still here and ServiceMonitor is deleted, then remove the finalizer
 		utilfinalizer.Remove(&routeMonitor, routemonitorconst.FinalizerKey)
