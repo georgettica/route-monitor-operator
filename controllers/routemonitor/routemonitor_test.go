@@ -218,7 +218,10 @@ var _ = Describe("Routemonitor", func() {
 			})
 			JustBeforeEach(func() {
 				scheme := constinit.Scheme
-				routeMonitorReconcilerClient = fake.NewFakeClientWithScheme(scheme, &routeMonitor)
+				routeMonitorReconcilerClient = fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(&routeMonitor).
+					Build()
 			})
 			It("should return No Host error", func() {
 				// Act

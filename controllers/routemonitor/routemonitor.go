@@ -49,8 +49,7 @@ type RouteMonitorReconciler struct {
 // +kubebuilder:rbac:groups=monitoring.openshift.io,resources=routemonitors/status,verbs=get;update;patch
 // +kubebuilder:rbac:groups=route.openshift.io,resources=routes,verbs=get;list;watch
 
-func (r *RouteMonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *RouteMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithName("Reconcile")
 
 	log.V(2).Info("Entering GetRouteMonitor")

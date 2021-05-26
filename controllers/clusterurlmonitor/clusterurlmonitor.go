@@ -53,8 +53,7 @@ const (
 // +kubebuilder:rbac:groups=config.openshift.io,resources=dnses,verbs=get;list;watch
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheusrules,verbs=get;list;watch;create;delete
 
-func (r *ClusterUrlMonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
-	ctx := context.Background()
+func (r *ClusterUrlMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
 	log := r.Log.WithValues("clusterurlmonitor", req.NamespacedName)
 
 	clusterUrlMonitor, res, err := r.GetClusterUrlMonitor(req, ctx)

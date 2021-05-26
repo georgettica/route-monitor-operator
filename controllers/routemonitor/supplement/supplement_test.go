@@ -80,7 +80,9 @@ var _ = Describe("Routemonitor", func() {
 		routeMonitorName = "fake-name"
 		routeMonitorNamespace = "fake-namespace"
 		routeMonitorRouteSpec = v1alpha1.RouteMonitorRouteSpec{}
-		routeMonitorSupplementClient = fake.NewFakeClientWithScheme(scheme)
+		routeMonitorSupplementClient = fake.NewClientBuilder().
+			WithScheme(scheme).
+			Build()
 		routeMonitorFinalizers = routemonitorconst.FinalizerList
 		routeMonitorDeletionTimestamp = nil
 		routeMonitorStatus = v1alpha1.RouteMonitorStatus{}
@@ -166,7 +168,9 @@ var _ = Describe("Routemonitor", func() {
 		When("the RouteMonitor is not found", func() {
 			// Arrange
 			BeforeEach(func() {
-				routeMonitorSupplementClient = fake.NewFakeClientWithScheme(scheme)
+				routeMonitorSupplementClient = fake.NewClientBuilder().
+					WithScheme(scheme).
+					Build()
 			})
 			It("should stop requeue", func() {
 				// Act
@@ -180,7 +184,10 @@ var _ = Describe("Routemonitor", func() {
 		When("the RouteMonitor is found", func() {
 			// Arrange
 			BeforeEach(func() {
-				routeMonitorSupplementClient = fake.NewFakeClientWithScheme(scheme, &routeMonitor)
+				routeMonitorSupplementClient = fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(&routeMonitor).
+					Build()
 			})
 
 			It("should return the object", func() {
@@ -209,7 +216,10 @@ var _ = Describe("Routemonitor", func() {
 						Namespace: routeMonitorNamespace,
 					},
 				}
-				routeMonitorSupplementClient = fake.NewFakeClientWithScheme(scheme, &route)
+				routeMonitorSupplementClient = fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(&route).
+					Build()
 			})
 			It("should return a Not Found error", func() {
 				// Act
@@ -231,7 +241,10 @@ var _ = Describe("Routemonitor", func() {
 						Namespace: routeMonitorNamespace,
 					},
 				}
-				routeMonitorSupplementClient = fake.NewFakeClientWithScheme(scheme, &route)
+				routeMonitorSupplementClient = fake.NewClientBuilder().
+					WithScheme(scheme).
+					WithObjects(&route).
+					Build()
 			})
 			It("should return the route", func() {
 				// Act

@@ -155,7 +155,9 @@ var _ = Describe("Adder", func() {
 		When("the RouteMonitor has no Host", func() {
 			// Arrange
 			BeforeEach(func() {
-				routeMonitorAdderClient = fake.NewFakeClientWithScheme(scheme)
+				routeMonitorAdderClient = fake.NewClientBuilder().
+					WithScheme(scheme).
+					Build()
 				routeMonitorStatus = v1alpha1.RouteMonitorStatus{}
 			})
 			It("should return No Host error", func() {
