@@ -144,7 +144,6 @@ var _ = Describe("Routemonitor", func() {
 			shouldDeleteBlackBoxExporterResourcesResponse = blackboxexporter.KeepBlackBoxExporter
 		})
 		JustBeforeEach(func() {
-
 			shouldDeleteBlackBoxExporterResources.CalledTimes = 1
 
 			mockBlackboxExporter.EXPECT().EnsureBlackBoxExporterResourcesAbsent().

@@ -79,7 +79,9 @@ const (
 // +kubebuilder:rbac:groups=monitoring.coreos.com,resources=prometheusrules,verbs=get;list;watch;create;delete
 // +kubebuilder:rbac:groups=config.openshift.io,resources=clusterversions,verbs=get;list;watch
 
-func (r *ClusterUrlMonitorReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) {
+func (r *ClusterUrlMonitorReconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Result, error) {
+        r.Ctx = ctx
+	log := r.Log.WithValues("clusterurlmonitor", req.NamespacedName)
 
 	clusterUrlMonitor, res, err := r.GetClusterUrlMonitor(req)
 	if err != nil {
