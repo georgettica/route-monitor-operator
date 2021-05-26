@@ -12,8 +12,11 @@ op-generate openapi-generate: ;
 
 VERSION ?= $(OPERATOR_VERSION)
 PREV_VERSION ?= $(VERSION)
+
+IMAGE_TAG_BASE ?= $(OPERATOR_NAME)
+
 # Default bundle image tag
-BUNDLE_IMG ?= controller-bundle:$(VERSION)
+BUNDLE_IMG ?= $(IMAGE_TAG_BASE)-bundle:$(VERSION)
 # Options for 'bundle-build'
 ifneq ($(origin CHANNELS), undefined)
 BUNDLE_CHANNELS := --channels=$(CHANNELS)
@@ -146,6 +149,36 @@ else
 KUSTOMIZE=$(shell which kustomize)
 endif
 endif
+
+
+# from https://sdk.operatorframework.io/docs/upgrading-sdk-version/v1.6.1/#gov2-gov3-ansiblev1-helmv1-add-opm-and-catalog-build-makefile-targets
+OS = $(shell go env GOOS)
+ARCH = $(shell go env GOARCH)
+
+.PHONY: opm
+OPM = ./bin/opm
+opm:
+ifeq (,$(wildcard $(OPM)))
+ifeq (,$(shell which opm 2>/dev/null))
+	@{ \
+	set -e ;\
+	mkdir -p $(dir $(OPM)) ;\
+	curl -sSLo $(OPM) https://github.com/operator-framework/operator-registry/releases/download/v1.15.1/$(OS)-$(ARCH)-opm ;\
+	chmod +x $(OPM) ;\
+	}
+else 
+OPM = $(shell which opm)
+endif
+endif
+BUNDLE_IMGS ?= $(BUNDLE_IMG) 
+CATALOG_IMG ?= $(IMAGE_TAG_BASE)-catalog:v$(VERSION) ifneq ($(origin CATALOG_BASE_IMG), undefined) FROM_INDEX_OPT := --from-index $(CATALOG_BASE_IMG) endif 
+.PHONY: catalog-build
+catalog-build: opm
+	$(OPM) index add --container-tool docker --mode semver --tag $(CATALOG_IMG) --bundles $(BUNDLE_IMGS) $(FROM_INDEX_OPT)
+
+.PHONY: catalog-push
+catalog-push: ## Push the catalog image.
+	$(MAKE) docker-push IMG=$(CATALOG_IMG)
 
 export YAML_DIRECTORY?=hack/olm-base-resources
 export SELECTOR_SYNC_SET_TEMPLATE_DIR?=hack/templates/
