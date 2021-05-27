@@ -163,6 +163,9 @@ var _ = Describe("Routemonitor", func() {
 			},
 			Status: routeMonitorStatus,
 		}
+		// https://github.com/kubernetes-sigs/controller-runtime/blob/72fc2c61d2b34cfee62910d22ae7546f46b1893c/pkg/client/fake/client.go#L147
+		// unless it's provided, the number is "999", so I provided some number to hard pin it
+		routeMonitor.ObjectMeta.ResourceVersion = "123"
 		expectedRouteMonitor = routeMonitor
 
 		deepEqualResponse = true
@@ -216,14 +219,11 @@ var _ = Describe("Routemonitor", func() {
 				routeMonitorStatus = v1alpha1.RouteMonitorStatus{}
 				shouldPopulateError, errorToPopulate = true, customerrors.NoHost
 			})
-			JustBeforeEach(func() {
-				scheme := constinit.Scheme
+			It("should return No Host error", func() {
 				routeMonitorReconcilerClient = fake.NewClientBuilder().
-					WithScheme(scheme).
+					WithScheme(constinit.Scheme).
 					WithObjects(&routeMonitor).
 					Build()
-			})
-			It("should return No Host error", func() {
 				// Act
 				_, err := routeMonitorReconciler.EnsurePrometheusRuleResourceExists(ctx, routeMonitor)
 				// Assert
