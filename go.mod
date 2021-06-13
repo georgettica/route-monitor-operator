@@ -1,6 +1,6 @@
 module github.com/openshift/route-monitor-operator
 
-go 1.13
+go 1.16
 
 require (
 	github.com/go-logr/logr v0.4.0
@@ -10,9 +10,8 @@ require (
 	github.com/onsi/gomega v1.13.0
 	github.com/openshift/api v0.0.0-20200917102736-0a191b5b9bb0
 	github.com/operator-framework/operator-sdk v1.2.0 // indirect
-	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.48.1
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/prometheus/client_golang v1.5.1 // indirect
+	github.com/prometheus-operator/prometheus-operator/pkg/apis/monitoring v0.48.1
 	github.com/prometheus/common v0.26.0
 	gopkg.in/inf.v0 v0.9.1
 	k8s.io/api v0.21.1
