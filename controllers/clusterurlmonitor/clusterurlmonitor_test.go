@@ -11,6 +11,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 
 	"github.com/openshift/route-monitor-operator/api/v1alpha1"
+	//nolint:typecheck
 	. "github.com/openshift/route-monitor-operator/controllers/clusterurlmonitor"
 	"github.com/openshift/route-monitor-operator/pkg/consts/blackboxexporter"
 	constinit "github.com/openshift/route-monitor-operator/pkg/consts/test/init"
