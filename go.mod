@@ -14,8 +14,6 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.5.1 // indirect
 	github.com/prometheus/common v0.10.0
-	github.com/stretchr/testify v1.6.1 // indirect
-	google.golang.org/protobuf v1.25.0 // indirect
 	gopkg.in/inf.v0 v0.9.1
 	k8s.io/api v0.20.2
 	k8s.io/apimachinery v0.20.2
