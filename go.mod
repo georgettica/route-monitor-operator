@@ -19,3 +19,5 @@ require (
 	k8s.io/client-go v0.21.1
 	sigs.k8s.io/controller-runtime v0.9.0
 )
+
+replace github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.0
