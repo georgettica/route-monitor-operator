@@ -20,4 +20,3 @@ require (
 	sigs.k8s.io/controller-runtime v0.9.0
 )
 
-replace github.com/googleapis/gnostic => github.com/googleapis/gnostic v0.4.0
